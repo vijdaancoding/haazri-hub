@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import AttendanceRecord
+from .models import UploadedImage
 
-class AttendanceRecordSerializer(serializers.ModelSerializer):
+class UploadedImageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AttendanceRecord
-        fields = '__all__'
+        model = UploadedImage
+        fields = ['id', 'image', 'uploaded_at']

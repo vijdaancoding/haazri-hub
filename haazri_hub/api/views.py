@@ -1,31 +1,46 @@
-from rest_framework.decorators import api_view
+import os
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
-from .models import AttendanceRecord
-from .serializers import AttendanceRecordSerializer
+from ultralytics import YOLO
+from PIL import Image
+from django.conf import settings
+from .serializers import UploadedImageSerializer
 
-# Mark attendance
-@api_view(['POST'])
-def mark_attendance(request):
-    serializer = AttendanceRecordSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# Load YOLO model globally to avoid reloading on every request
+yolo_model = YOLO('best.pt')
 
-# List all attendance records
-@api_view(['GET'])
-def list_attendance(request):
-    records = AttendanceRecord.objects.all()
-    serializer = AttendanceRecordSerializer(records, many=True)
-    return Response(serializer.data)
+class ObjectDetectionView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
 
-# Get a single attendance record by ID
-@api_view(['GET'])
-def get_attendance(request, id):
-    try:
-        record = AttendanceRecord.objects.get(pk=id)
-        serializer = AttendanceRecordSerializer(record)
-        return Response(serializer.data)
-    except AttendanceRecord.DoesNotExist:
-        return Response({"error": "Record not found"}, status=status.HTTP_404_NOT_FOUND)
+    def post(self, request, *args, **kwargs):
+        serializer = UploadedImageSerializer(data=request.data)
+        if serializer.is_valid():
+            uploaded_instance = serializer.save()
+            # Get the absolute path to the uploaded file
+            image_path = uploaded_instance.image.path
+
+            print(f"Absolute Path to Image: {image_path}")  # Debugging
+
+            try:
+                # Open the image
+                image = Image.open(image_path)
+                results = yolo_model(image)
+
+                predictions = results[0].boxes.data.tolist()
+                detected_objects = []
+                for pred in predictions:
+                    class_id = int(pred[5])
+                    class_name = results[0].names[class_id]
+                    detected_objects.append(class_name)
+
+                detected_objects = list(set(detected_objects))  # Remove duplicates
+                response_data = {"detected_objects": detected_objects}
+
+                return Response(response_data, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
