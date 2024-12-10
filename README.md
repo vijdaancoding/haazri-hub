@@ -1,4 +1,4 @@
-![Haazri Hub](/haazri-hub/img/Haazrihub.png)
+![Haazri Hub](/img/Haazrihub.png)
 
 ## 🧑🏻‍🎓 Haazri Hub
 
