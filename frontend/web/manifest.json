@@ -1,6 +1,6 @@
 {
-    "name": "frontend",
-    "short_name": "frontend",
+    "name": "haazri_hub_flutter",
+    "short_name": "haazri_hub_flutter",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
