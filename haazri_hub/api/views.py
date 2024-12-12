@@ -37,7 +37,8 @@ class ObjectDetectionView(APIView):
 
                 detected_objects = list(set(detected_objects))  # Remove duplicates
                 response_data = {"detected_objects": detected_objects}
-
+                print("testing : ")
+                print(response_data)  # Debugging
                 return Response(response_data, status=status.HTTP_200_OK)
 
             except Exception as e:
