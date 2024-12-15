@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const Dashboard(),
         '/capture': (context) => const CaptureScreen(),
         '/upload': (context) => const UploadScreen(),
-        '/view': (context) => const ViewAttendanceScreen(),
+        // '/view': (context) => const ViewAttendanceScreen(),
       },
     );
   }

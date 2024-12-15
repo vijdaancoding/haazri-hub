@@ -1,23 +1,27 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
 
-  static Future<List<String>> getAttendanceRecords() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/attendance/list/'));
+  static Future<Map<String, dynamic>> uploadImage(File imageFile) async {
+    final url = Uri.parse('$baseUrl/detect-objects/');
+    final request = http.MultipartRequest('POST', url);
 
-      if (response.statusCode == 200) {
-        // Parse and return the JSON data
-        return List<String>.from(json.decode(response.body));
-      } else {
-        print('Error: ${response.statusCode} - ${response.body}');
-        throw Exception('Failed to fetch attendance records 11');
-      }
-    } catch (e) {
-      print('Error: $e');
-      throw Exception('Failed to fetch attendance records 22');
+    // Attach the image file
+    request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+
+    // Send the request
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    // Parse the response
+    if (response.statusCode == 200) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception(
+          "Error uploading image: ${response.statusCode} - ${response.body}");
     }
   }
 }
