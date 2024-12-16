@@ -39,6 +39,14 @@ dependencies:
   desktop_webview_window: ^0.2.3
   file_picker: ^8.1.4
   webview_flutter: ^3.0.0
+  google_fonts: ^4.0.4
+  flutter_svg: ^2.0.7
+  provider: ^6.1.2
+  font_awesome_flutter: ^10.1.0  # Latest version of font_awesome_flutter
+  cached_network_image: ^3.2.2
+
+
+
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -59,8 +67,10 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-flutter:
-
+flutter:  
+  assets:
+    - assets/images/gikilogo.jpg
+    - assets/images/haazrihub.png
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
