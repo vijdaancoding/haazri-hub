@@ -1,1 +1,4 @@
-django
+Django
+djangorestframework
+Pillow
+ultralytics
