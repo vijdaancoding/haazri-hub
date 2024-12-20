@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.validators import RegexValidator
-from django.core.files.storage import deafult_storage
 from django.utils import timezone
 import uuid
 
