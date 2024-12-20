@@ -3,7 +3,7 @@ from django.core.files.storage import default_storage
 from firebase_admin import firestore
 from .firebase_config import bucket, firestore_client
 
-def upload_image_to_firebase(image_file, description=None):
+def UploadImageToFirebase(image_file, description=None):
 
     filename = f"uploaded_images/{uuid.uuid4()}.jpg"
 

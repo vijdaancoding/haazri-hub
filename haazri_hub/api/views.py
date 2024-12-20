@@ -7,7 +7,9 @@ from rest_framework import status
 from .serializers import UploadedImageSerializer
 from .utils.yolo_predictor import ObjectDetection
 from .forms import ImageUploadForm
-from .services import upload_image_to_firebase
+from .services import UploadImageToFirebase
+from django.views.decorators.csrf import csrf_exempt
+
 
 class ObjectDetectionView(APIView):
     """
@@ -15,7 +17,8 @@ class ObjectDetectionView(APIView):
     handles api for YOLO model
     """
     parser_classes = [MultiPartParser, FormParser]
-
+    
+    @csrf_exempt
     def post(self, request, *args, **kwargs):
         serializer = UploadedImageSerializer(data=request.data)
         if serializer.is_valid():
@@ -35,15 +38,15 @@ class ObjectDetectionView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-def upload_image(request):
+@csrf_exempt
+def UploadImage(request):
     if request.method == 'POST':
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
             image = request.FILES['image']
             description = form.cleaned_data.get('description', '')
 
-            result = upload_image_to_firebase(image, description)
+            result = UploadImageToFirebase(image, description)
 
             return JsonResponse({
                 'message': 'Image uploaded successfully!',

@@ -6,7 +6,7 @@ FIREBASE_CREDENTIAL_PATH = 'api/serviceAccountKey.json'
 
 cred = credentials.Certificate(FIREBASE_CREDENTIAL_PATH)
 firebase_admin.initialize_app(cred, {
-    'storageBucket' : 'sehat_gang_bucket'
+    'storageBucket' : 'django-attendance.firebasestorage.app'
 })
 
 firestore_client = firestore.client()
