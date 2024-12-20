@@ -1,1 +1,0 @@
-# the face recognition module is used to recognize the face of the student
