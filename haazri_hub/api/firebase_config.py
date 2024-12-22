@@ -1,6 +1,5 @@
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
-import os 
 
 FIREBASE_CREDENTIAL_PATH = 'api/serviceAccountKey.json'
 

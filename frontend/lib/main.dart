@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'screens/dashboard.dart';
-import 'screens/capture_screen.dart';
 import 'screens/upload_screen.dart';
 import 'screens/view_attendance_screen.dart';
 
@@ -21,7 +20,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const Dashboard(),
-        '/capture': (context) => const CaptureScreen(),
+       // '/capture': (context) => const CaptureScreen(),
         '/upload': (context) => const UploadScreen(),
         // '/view': (context) => const ViewAttendanceScreen(),
       },

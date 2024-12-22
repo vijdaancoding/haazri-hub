@@ -13,7 +13,8 @@ class UploadedImage(models.Model):
 class RegisteredStudents(models.Model):
 
     reg_num = models.CharField(
-        max_length=8, 
+        max_length=8,
+        primary_key=True, 
         unique=True,
         validators=[RegexValidator(regex=r'\d{7,8}$', message="Registration Number must be between 7 and 8 digits.\n")]
     )
@@ -27,13 +28,13 @@ class AttendanceRecord(models.Model):
 
     student = models.ForeignKey(RegisteredStudents, on_delete=models.CASCADE, related_name='attendances') 
     date = models.DateField(default=timezone.now)
-    is_present = models.BooleanField(default=True)
+    is_present = models.BooleanField(default=False)
 
     class Meta: 
         unique_together = ('student', 'date')
 
-        def __str__(self):
-            return f"{self.student.reg_num} - {self.date} - {self.date} - {'P' if self.is_present else 'A'}"
+    def __str__(self):
+        return f"{self.student.reg_num} - {self.date} - {'P' if self.is_present else 'A'}"
         
 class StoredImages(models.Model):
 

@@ -33,12 +33,10 @@ dependencies:
     sdk: flutter
 
   http: ^1.0.0
-  camera: ^0.11.0  # For webcam capture
   path_provider: ^2.0.15  # For saving the image
   path: ^1.8.3  # For managing file paths
   desktop_webview_window: ^0.2.3
   file_picker: ^8.1.4
-  webview_flutter: ^3.0.0
   google_fonts: ^4.0.4
   flutter_svg: ^2.0.7
   provider: ^6.1.2

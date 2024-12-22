@@ -1,7 +1,6 @@
 from django.urls import path
-from .views import ObjectDetectionView, UploadImage
+from .views import ObjectDetectionView
 
 urlpatterns = [
     path('detect-objects/', ObjectDetectionView.as_view(), name='detect-objects'),
-    path('upload-image/', UploadImage, name='upload_image'),
 ]
