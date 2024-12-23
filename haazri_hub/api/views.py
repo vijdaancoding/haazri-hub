@@ -50,21 +50,30 @@ class ObjectDetectionView(APIView):
                         clean_reg_num = reg_num.strip().split()[0] if isinstance(reg_num, str) else str(reg_num)
                         processed_reg_nums.append(clean_reg_num)
 
-                    # create/update attendance for all registered students
-                    all_students = RegisteredStudents.objects.all()
-                    
-                    for student in all_students:
-                        AttendanceRecord.objects.update_or_create(
-                            student=student,
-                            date=today,
-                            defaults={'is_present': student.reg_num in processed_reg_nums}
-                        )
-                    
                     if not processed_reg_nums:
                         raise ValueError("No valid registered students found in detected objects")
 
+                    # Get all registered students
+                    all_students = RegisteredStudents.objects.all()
                     
-                    
+                    # Get or create attendance records for all students
+                    for student in all_students:
+                        attendance_record, created = AttendanceRecord.objects.get_or_create(
+                            student=student,
+                            date=today,
+                            defaults={'is_present': False}
+                        )
+                        
+                        # If student is detected in current image, mark them present
+                        if student.reg_num in processed_reg_nums:
+                            attendance_record.is_present = True
+                            attendance_record.save()
+                        # If record already exists and student was present before, keep them present
+                        elif not created and attendance_record.is_present:
+                            continue
+                        # If new record and student not detected, they remain absent (default)
+
+                    # Rest of the code for image processing and Firebase upload
                     today = timezone.now()
                     image_description = (f"Attendance taken on {today.date()}. "
                                       f"Raw detections: {detected_objects}, "
