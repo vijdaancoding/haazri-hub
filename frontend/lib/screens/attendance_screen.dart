@@ -98,13 +98,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   itemBuilder: (context, index) {
                     final record = attendance.records[index];
                     return Container(
-                      color: AppColors.accentLight, // Alternate row color
+                      color: const Color.fromARGB(255, 255, 255, 255), // Alternate row color
                       child: ListTile(
                         title: Text(
-                          'Reg. Num: ${record.regNum}',
-                          style: AppStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.textColor),
+                          '${record.regNum}',
+                          style: AppStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 21, 112, 176)),
                         ),
-                        subtitle: Text('Name: ${record.name ?? 'N/A'}'),
+                        
                         trailing: Text(
                           record.status == 'P' ? 'Present' : 'Absent',
                           style: TextStyle(

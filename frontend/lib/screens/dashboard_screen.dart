@@ -8,6 +8,8 @@ import '/utils/app_styles.dart';
 import '/widgets/custom_navbar.dart';
 import '/widgets/description_text_widget.dart';
 import '/screens/game_screen.dart';
+import '/services/api_service.dart';
+import '/models/attendance_data.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -19,21 +21,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   int _selectedIndex = 0;
   double _sideMenuWidth = 250; // Adjust as needed
   bool _isSideMenuOpen = false;
-
   late AnimationController _animationController;
   late Animation<double> _menuAnimation;
-
+  List<AttendanceData> _attendanceData = [];
+  final ApiService _apiService = ApiService();
   final List<Widget> _screens = [
     CameraScreen(),
     GalleryScreen(),
     AttendanceScreen(),
   ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   void initState() {
@@ -49,6 +45,27 @@ class _DashboardScreenState extends State<DashboardScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+    _fetchAttendanceData();
+  }
+
+  Future<void> _fetchAttendanceData() async {
+    try {
+      List<AttendanceData> attendanceDataList = await _apiService.getAttendanceRecords();
+
+        setState(() {
+          _attendanceData = attendanceDataList;
+        });
+    } catch (e) {
+      // Handle errors
+      print("Error fetching attendance data: $e");
+      // Optionally show an error message to the user
+    }
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   @override
@@ -70,10 +87,22 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    int presentCount = 0;
+    int totalCount = 0;
+
+    if (_attendanceData.isNotEmpty) {
+      // Use the first AttendanceData object in the list
+      AttendanceData latestAttendance = _attendanceData.first;
+      presentCount = latestAttendance.records
+          .where((record) => record.status == 'P')
+          .length;
+      totalCount = latestAttendance.records.length;
+    }
+
+    double attendanceRatio = totalCount > 0 ? presentCount / totalCount : 0.0;
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-      body: Container
-      (
+      body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/bg.jpg'),
@@ -84,141 +113,166 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
         ),
-        child:Stack(
-        children: [
-          // Main Content Area
-          SingleChildScrollView(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(height: 60), // Account for AppBar height
-                  Text(
-                    'Hazari Hub',
-                    style: AppStyles.heading1.copyWith(
-                      fontSize: 32,
-                      color: AppColors.primaryDark,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 30),
-                    child: DescriptionTextWidget(
-                      text:
-                          "Effortlessly manage attendance with Hazari Hub! We leverage the power of cutting-edge YOLO object detection and a robust Django backend, paired with Firebase storage for a seamless experience. Snap, upload, and track - it's that simple!",
-                    ),
-                  ),
-                  SizedBox(height: 30),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                      textStyle: TextStyle(fontSize: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+        child: Stack(
+          children: [
+            // Main Content Area
+            SingleChildScrollView(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(height: 100), // Account for AppBar height
+                    Text(
+                      'Hazari Hub',
+                      style: AppStyles.heading1.copyWith(
+                        fontSize: 32,
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.bold,
                       ),
-                      elevation: 2,
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => TeamScreen()),
-                      );
-                    },
-                    child: Text(
-                      'Meet the Team',
-                      style: TextStyle(
-                          color: AppColors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  SizedBox(height: 30),
-                  _buildDashboardButton(
-                    context,
-                    'Capture',
-                    Icons.camera_alt,
-                    AppColors.accentColor,
-                    CameraScreen(),
-                  ),
-                  SizedBox(height: 20),
-                  _buildDashboardButton(
-                    context,
-                    'Gallery',
-                    Icons.photo_library,
-                    AppColors.primaryColor,
-                    GalleryScreen(),
-                  ),
-                  SizedBox(height: 20),
-                  _buildDashboardButton(
-                    context,
-                    'Attendance',
-                    Icons.list_alt,
-                    AppColors.primaryColor,
-                    AttendanceScreen(),
-                  ),
-                  SizedBox(height: 50),
-                ],
-              ),
-            ),
-          ),
-          // Side Menu (Initially hidden)
-          AnimatedBuilder(
-            animation: _menuAnimation,
-            builder: (context, child) {
-              return Positioned(
-                left: _menuAnimation.value,
-                top: 0,
-                bottom: 0,
-                width: _sideMenuWidth,
-                child: Container(
-                  color: AppColors.primaryColor, // Or a different menu color
-                  child: Column(
-                    children: [
-                      // Add padding at the top of the menu to align with the AppBar
-                      SizedBox(
-                        height: MediaQuery.of(context).padding.top + 60,
+                    SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 30),
+                      child: DescriptionTextWidget(
+                        text:
+                            "Effortlessly manage attendance with Hazari Hub! We leverage the power of cutting-edge YOLO object detection and a robust Django backend, paired with Firebase storage for a seamless experience. Snap, upload, and track - it's that simple!",
                       ),
-                      ListTile(
-                        leading: Icon(Icons.gamepad, color: AppColors.white),
-                        title: Text(
-                          'Play Game',
-                          style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18.0),
+                    ),
+                    SizedBox(height: 30),
+                    SizedBox(height: 30),
+                    CustomPaint(
+                      painter: AttendanceCirclePainter(attendanceRatio, AppColors.primaryColor),
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        child: Center(
+                          child: Text(
+                            totalCount > 0 ? '${(attendanceRatio * 100).toInt()}%' : 'N/A',
+                            style: TextStyle(
+                              color: AppColors.textColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 24,
+                            ),
+                          ),
                         ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => GameScreen()),
-                          );
-                        },
                       ),
-                      // Add more side menu items here
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: 30),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryColor,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                        textStyle: TextStyle(fontSize: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 2,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => TeamScreen()),
+                        );
+                      },
+                      child: Text(
+                        'Meet the Team',
+                        style: TextStyle(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(height: 30),
+                    _buildDashboardButton(
+                      context,
+                      'Capture',
+                      Icons.camera_alt,
+                      AppColors.accentColor,
+                      CameraScreen(),
+                    ),
+                    SizedBox(height: 20),
+                    _buildDashboardButton(
+                      context,
+                      'Gallery',
+                      Icons.photo_library,
+                      AppColors.primaryColor,
+                      GalleryScreen(),
+                    ),
+                    SizedBox(height: 20),
+                    _buildDashboardButton(
+                      context,
+                      'Attendance',
+                      Icons.list_alt,
+                      AppColors.primaryColor,
+                      AttendanceScreen(),
+                    ),
+                    SizedBox(height: 50),
+                  ],
                 ),
-              
-              );
-            },
-          ),
-
-          // App Bar (Always visible, above other content)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AppBar(
-              leading: IconButton(
-                icon: Icon(Icons.menu, color: AppColors.white),
-                onPressed: _toggleSideMenu,
               ),
-              title: Text('Hazari Hub', style: AppStyles.heading1),
-              backgroundColor: AppColors.primaryDark,
-              elevation: 0,
             ),
-          ),
-        ],
-      ),
+            // Side Menu (Initially hidden)
+            AnimatedBuilder(
+              animation: _menuAnimation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _menuAnimation.value,
+                  top: 0,
+                  bottom: 0,
+                  width: _sideMenuWidth,
+                  child: Container(
+                    color: AppColors.primaryDark, // Or a different menu color
+                    child: Column(
+                      children: [
+                        // Add padding at the top of the menu to align with the AppBar
+                        SizedBox(
+                          height: MediaQuery.of(context).padding.top + 60,
+                        ),
+                        ListTile(
+                          leading:
+                              Icon(Icons.gamepad, color: AppColors.white),
+                          title: Text(
+                            'Play Game',
+                            style: TextStyle(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18.0),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => GameScreen()),
+                            );
+                          },
+                        ),
+                        // Add more side menu items here
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            // App Bar (Always visible, above other content)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: AppBar(
+                leading: IconButton(
+                  icon: Icon(Icons.menu, color: AppColors.white),
+                  onPressed: _toggleSideMenu,
+                ),
+                title: Text('Hazari Hub', style: AppStyles.heading1),
+                backgroundColor: AppColors.primaryDark,
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: CustomNavBar(
         selectedIndex: _selectedIndex,
@@ -259,22 +313,61 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 }
 
+class AttendanceCirclePainter extends CustomPainter {
+  final double attendanceRatio;
+  final Color primaryColor;
+
+  AttendanceCirclePainter(this.attendanceRatio, this.primaryColor);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+
+    // Draw the background circle (total)
+    final backgroundPaint = Paint()
+      ..color = Colors.grey.shade300
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10;
+    canvas.drawCircle(center, radius, backgroundPaint);
+
+    // Draw the attendance arc (present)
+    final attendancePaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round; // Make the arc rounded
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -90 * (3.14 / 180), // Start angle (-90 degrees converted to radians)
+      360 * attendanceRatio * (3.14 / 180), // Sweep angle (attendanceRatio * 360 degrees converted to radians)
+      false,
+      attendancePaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
 class TeamScreen extends StatelessWidget {
   final List<TeamMember> teamMembers = [
     TeamMember(
-        name: 'Hamza Amin',
+        name: 'Faseeh Awan',
         role: 'Backend Developer',
         imageUrl:
-            'https://i1.sndcdn.com/artworks-cHBUUymTx569YCrd-tIIEtQ-t500x500.jpg'),
+            'https://scontent.fkhi20-1.fna.fbcdn.net/v/t39.30808-6/346165227_792930818880418_1299876299498417856_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=efb6e6&_nc_eui2=AeECemSxa1yXh2l8r-9jR-F74hD5rFpW2C5JqJ57yYdEXa57XhP9l0YhG13kK86U5j7tP1I9nJ0pWJ9N_OqGz45z&_nc_ohc=g-3lM02I9K8AX9xJ-G7&_nc_ht=scontent.fkhi20-1.fna&oh=00_AfC8Yp30G105xWvH1_Lg8rM5wJ5h-9Bw7mJkE37h4j7Uew&oe=660F6DB9'),
     TeamMember(
-        name: 'Maaz Hamid',
+        name: 'Huzaifa Ahmed',
         role: 'Frontend Developer',
-        imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDwWwty8v8U9MCaZNMgmsMI9GqCTx-y04oVw&s'),
+        imageUrl: 'https://avatars.githubusercontent.com/u/58684873?v=4'),
     TeamMember(
-        name: 'Ali Vijdaan',
-        role: 'Annotation Rat',
+        name: 'Saqib Mayo',
+        role: 'AI Developer',
         imageUrl:
-            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT765buj8mI8JGDniTmjE6gCWrQTbUHJeVyHw&s'),
+            'https://media.licdn.com/dms/image/D4D03AQHGc19V81h7Rw/profile-displayphoto-shrink_400_400/0/1711001234977?e=1716422400&v=beta&t=5P2Jc2l8Xq_w8tT_5kLOMYqSg2mY8K5Y0E5p7j_k64Y'),
   ];
 
   @override

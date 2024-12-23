@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Attendance System',
+      title: 'Hazari Hub',
       theme: ThemeData(
         primarySwatch: AppColors.primarySwatch, // Use your custom color scheme
         visualDensity: VisualDensity.adaptivePlatformDensity,

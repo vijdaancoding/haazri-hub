@@ -10,6 +10,14 @@ class AttendanceData {
         .toList();
     return AttendanceData(date: date, records: records);
   }
+
+  // Added toJson() method
+  Map<String, dynamic> toJson() {
+    return {
+      'date': date,
+      'records': records.map((record) => record.toJson()).toList(),
+    };
+  }
 }
 
 class AttendanceRecord {
@@ -17,8 +25,7 @@ class AttendanceRecord {
   final String? name;
   final String status;
 
-  AttendanceRecord(
-      {required this.regNum, required this.name, required this.status});
+  AttendanceRecord({required this.regNum, required this.name, required this.status});
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
     return AttendanceRecord(
@@ -26,5 +33,14 @@ class AttendanceRecord {
       name: json['name'],
       status: json['status'],
     );
+  }
+
+  // Added toJson() method
+  Map<String, dynamic> toJson() {
+    return {
+      'reg_num': regNum,
+      'name': name,
+      'status': status,
+    };
   }
 }
