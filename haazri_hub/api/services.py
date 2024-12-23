@@ -5,11 +5,9 @@ from django.utils import timezone
 
 def UploadImageToFirebase(image_file, description=None):
     try:
-        # Generate filename with timestamp
         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
         filename = f"attendance_images/{timestamp}_{uuid.uuid4()}.jpg"
 
-        # Create blob and upload
         blob = bucket.blob(filename)
         
         # If image_file is a file object (BufferedReader), read its content
@@ -18,7 +16,6 @@ def UploadImageToFirebase(image_file, description=None):
         else:
             file_content = image_file.file.read()
 
-        # Upload the file
         blob.upload_from_string(
             file_content,
             content_type='image/jpeg'
@@ -26,7 +23,6 @@ def UploadImageToFirebase(image_file, description=None):
 
         blob.make_public()
 
-        # Create Firestore document
         doc_ref = firestore_client.collection('attendance_images').document()
         doc_data = {
             'filename': filename,
@@ -47,7 +43,6 @@ def UploadImageToFirebase(image_file, description=None):
         }
 
     except Exception as e:
-        # Cleanup on error
         try:
             if 'blob' in locals():
                 blob.delete()

@@ -1,3 +1,9 @@
+"""
+Author: Hamza Amin
+Date: 2024-11-27
+
+"""
+
 import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from .models import RegisteredStudents, AttendanceRecord
 from django.db import transaction
+from rest_framework.decorators import api_view
 import os
 
 logger = logging.getLogger(__name__)
@@ -17,7 +24,7 @@ logger = logging.getLogger(__name__)
 class ObjectDetectionView(APIView):
     """
     OBJECT DETECTION VIEW -
-    handles api for YOLO model
+    HANDLES API REQUESTS FOR OBJECT DETECTION
     """
     parser_classes = [MultiPartParser, FormParser]
     
@@ -28,7 +35,7 @@ class ObjectDetectionView(APIView):
             uploaded_instance = serializer.save()
             image_path = uploaded_instance.image.path 
 
-            print(f"Absolute Path to Image: {image_path}")  # Debugging
+            print(f"Absolute Path to Image: {image_path}") 
 
             try:
                 with transaction.atomic():
@@ -40,24 +47,24 @@ class ObjectDetectionView(APIView):
                     processed_reg_nums = []
                     
                     for reg_num in detected_objects:
-                        # Clean the reg_num string in case there are any suffixes
                         clean_reg_num = reg_num.strip().split()[0] if isinstance(reg_num, str) else str(reg_num)
-                        
-                        student = RegisteredStudents.objects.filter(reg_num=clean_reg_num).first()
-                        if student:
-                            AttendanceRecord.objects.update_or_create(
-                                student=student,
-                                date=today,
-                                defaults={'is_present': True}
-                            )
-                            processed_reg_nums.append(clean_reg_num)
-                        else:
-                            logger.warning(f"Unregistered student detected: {clean_reg_num}")
+                        processed_reg_nums.append(clean_reg_num)
+
+                    # create/update attendance for all registered students
+                    all_students = RegisteredStudents.objects.all()
+                    
+                    for student in all_students:
+                        AttendanceRecord.objects.update_or_create(
+                            student=student,
+                            date=today,
+                            defaults={'is_present': student.reg_num in processed_reg_nums}
+                        )
                     
                     if not processed_reg_nums:
                         raise ValueError("No valid registered students found in detected objects")
 
-                    # Prepare image upload data
+                    
+                    
                     today = timezone.now()
                     image_description = (f"Attendance taken on {today.date()}. "
                                       f"Raw detections: {detected_objects}, "
@@ -69,10 +76,13 @@ class ObjectDetectionView(APIView):
                             uploaded_instance.image,  
                             description=image_description
                         )
-                        logger.info(f"Successfully uploaded to Firebase: {result['firestore_id']}")
+                        print(f"Successfully uploaded to Firebase: {result['firestore_id']}")
 
-                return Response(status=status.HTTP_204_NO_CONTENT)
-
+                return Response(
+                    {"message": "Image uploaded and attendance processed successfully"},
+                    status=status.HTTP_200_OK
+                )
+                
             except ValueError as ve:
                 logger.error(f"Validation error: {str(ve)}")
                 return Response(
@@ -95,3 +105,41 @@ class ObjectDetectionView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+@api_view(['GET'])
+def get_attendance_by_date(request):
+    try:
+        # Get dates and prefetch related data to optimize queries
+        dates = AttendanceRecord.objects.values_list('date', flat=True)\
+            .distinct().order_by('-date')  # Added descending order for latest first
+        
+        students = RegisteredStudents.objects.all()
+        attendance_data = {}
+        
+        # Bulk fetch attendance records for optimization
+        all_records = AttendanceRecord.objects.filter(date__in=dates)\
+            .select_related('student')
+        
+        for date in dates:
+            date_str = date.strftime('%Y-%m-%d')
+            attendance_data[date_str] = []
+            
+            date_records = {record.student_id: record.is_present 
+                          for record in all_records if record.date == date}
+            
+            for student in students:
+                attendance_data[date_str].append({
+                    'reg_num': student.reg_num,
+                    'name': student.name,
+                    'status': 'P' if date_records.get(student.reg_num, False) else 'A'
+                })
+        
+        return Response(attendance_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Error fetching attendance data: {str(e)}")
+        return Response(
+            {"error": "Failed to fetch attendance data"}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
