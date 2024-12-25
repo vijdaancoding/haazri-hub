@@ -54,11 +54,11 @@ def ObjectDetection(image_path):
                 detected_classes.append(str(class_name))
 
         
-        debug_var = list(set(detected_classes))
+        detected_students = list(set(detected_classes))
 
-        print(debug_var)
+        print(f"Students Detected :{detected_students}")
 
-        return debug_var
+        return detected_students
     
     except Exception as e:
         raise RuntimeError(f"Object Detection Failed: {e}")

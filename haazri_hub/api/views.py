@@ -43,7 +43,6 @@ class ObjectDetectionView(APIView):
                     if not detected_objects: 
                         raise ValueError("No objects detected in image")
 
-                    # today = timezone.now().date()
                   
                     today = datetime.now().date()
                     print(f"Today's Date: {today}")
@@ -57,10 +56,8 @@ class ObjectDetectionView(APIView):
                     if not processed_reg_nums:
                         raise ValueError("No valid registered students found in detected objects")
 
-                    # Get all registered students
                     all_students = RegisteredStudents.objects.all()
                     
-                    # Get or create attendance records for all students
                     for student in all_students:
                         attendance_record, created = AttendanceRecord.objects.get_or_create(
                             student=student,
@@ -68,19 +65,12 @@ class ObjectDetectionView(APIView):
                             defaults={'is_present': False}
                         )
                         
-                        # If student is detected in current image, mark them present
                         if student.reg_num in processed_reg_nums:
                             attendance_record.is_present = True
                             attendance_record.save()
-                        # If record already exists and student was present before, keep them present
                         elif not created and attendance_record.is_present:
                             continue
-                        # If new record and student not detected, they remain absent (default)
-
-                    # Rest of the code for image processing and Firebase upload
                     
-                    
-                    # today = timezone.now()
                     today = datetime.now()
                     
                     image_description = (f"Attendance taken on {today.date()}. "
@@ -127,9 +117,8 @@ class ObjectDetectionView(APIView):
 @api_view(['GET'])
 def get_attendance_by_date(request):
     try:
-        # Get dates and prefetch related data to optimize queries
         dates = AttendanceRecord.objects.values_list('date', flat=True)\
-            .distinct().order_by('-date')  # Added descending order for latest first
+            .distinct().order_by('-date')
         
         students = RegisteredStudents.objects.all()
         attendance_data = {}

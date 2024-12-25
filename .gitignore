@@ -1,3 +1,5 @@
 .env
 .pt
-haazri-hub/haazri_hub/api/serviceAccountKey.json 
+serviceAccountKey.json 
+*.pyc
+*.onnx
