@@ -87,3 +87,4 @@ ultralytics                   8.3.50
 ultralytics-thop              2.0.13
 uritemplate                   4.1.1
 urllib3                       2.2.3
+onnxruntime
