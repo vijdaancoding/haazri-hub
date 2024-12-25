@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import RegexValidator
-from django.utils import timezone
+from datetime import datetime
+
 import uuid
 
 class UploadedImage(models.Model):
@@ -27,7 +28,7 @@ class RegisteredStudents(models.Model):
 class AttendanceRecord(models.Model):
 
     student = models.ForeignKey(RegisteredStudents, on_delete=models.CASCADE, related_name='attendances') 
-    date = models.DateField(default=timezone.now)
+    date = models.DateField(default=datetime.now())
     is_present = models.BooleanField(default=False)
 
     class Meta: 

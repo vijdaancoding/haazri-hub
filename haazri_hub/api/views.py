@@ -13,11 +13,11 @@ from .serializers import UploadedImageSerializer
 from .utils.yolo_predictor import ObjectDetection
 from .services import UploadImageToFirebase
 from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
 from .models import RegisteredStudents, AttendanceRecord
 from django.db import transaction
 from rest_framework.decorators import api_view
 import os
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,11 @@ class ObjectDetectionView(APIView):
                     if not detected_objects: 
                         raise ValueError("No objects detected in image")
 
-                    today = timezone.now().date()
+                    # today = timezone.now().date()
+                  
+                    today = datetime.now().date()
+                    print(f"Today's Date: {today}")
+                                        
                     processed_reg_nums = []
                     
                     for reg_num in detected_objects:
@@ -74,7 +78,11 @@ class ObjectDetectionView(APIView):
                         # If new record and student not detected, they remain absent (default)
 
                     # Rest of the code for image processing and Firebase upload
-                    today = timezone.now()
+                    
+                    
+                    # today = timezone.now()
+                    today = datetime.now()
+                    
                     image_description = (f"Attendance taken on {today.date()}. "
                                       f"Raw detections: {detected_objects}, "
                                       f"Processed students: {', '.join(processed_reg_nums)}")

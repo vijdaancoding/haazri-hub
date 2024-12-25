@@ -1,11 +1,12 @@
 import uuid 
 from firebase_admin import firestore
 from .firebase_config import bucket, firestore_client
-from django.utils import timezone
+from datetime import datetime
+
 
 def UploadImageToFirebase(image_file, description=None):
     try:
-        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"attendance_images/{timestamp}_{uuid.uuid4()}.jpg"
 
         blob = bucket.blob(filename)
