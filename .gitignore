@@ -3,3 +3,5 @@
 serviceAccountKey.json 
 *.pyc
 *.onnx
+*.pkl
+*.npz
