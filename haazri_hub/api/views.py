@@ -21,86 +21,95 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+
 class ObjectDetectionView(APIView):
     """
     OBJECT DETECTION VIEW -
     HANDLES API REQUESTS FOR OBJECT DETECTION
     """
+
     parser_classes = [MultiPartParser, FormParser]
-    
+
     @csrf_exempt
     def post(self, request, *args, **kwargs):
         serializer = UploadedImageSerializer(data=request.data)
         if serializer.is_valid():
             uploaded_instance = serializer.save()
-            image_path = uploaded_instance.image.path 
+            image_path = uploaded_instance.image.path
 
-            print(f"Absolute Path to Image: {image_path}") 
+            print(f"Absolute Path to Image: {image_path}")
 
             try:
                 with transaction.atomic():
                     detected_objects = ObjectDetection(image_path)
-                    if not detected_objects: 
+                    if not detected_objects:
                         raise ValueError("No objects detected in image")
 
-                  
                     today = datetime.now().date()
                     print(f"Today's Date: {today}")
-                                        
+
                     processed_reg_nums = []
-                    
+
                     for reg_num in detected_objects:
-                        clean_reg_num = reg_num.strip().split()[0] if isinstance(reg_num, str) else str(reg_num)
+                        clean_reg_num = (
+                            reg_num.strip().split()[0]
+                            if isinstance(reg_num, str)
+                            else str(reg_num)
+                        )
                         processed_reg_nums.append(clean_reg_num)
 
                     if not processed_reg_nums:
-                        raise ValueError("No valid registered students found in detected objects")
+                        raise ValueError(
+                            "No valid registered students found in detected objects"
+                        )
 
                     all_students = RegisteredStudents.objects.all()
-                    
+
                     for student in all_students:
-                        attendance_record, created = AttendanceRecord.objects.get_or_create(
-                            student=student,
-                            date=today,
-                            defaults={'is_present': False}
+                        attendance_record, created = (
+                            AttendanceRecord.objects.get_or_create(
+                                student=student,
+                                date=today,
+                                defaults={"is_present": False},
+                            )
                         )
-                        
+
                         if student.reg_num in processed_reg_nums:
                             attendance_record.is_present = True
                             attendance_record.save()
                         elif not created and attendance_record.is_present:
                             continue
-                    
-                    today = datetime.now()
-                    
-                    image_description = (f"Attendance taken on {today.date()}. "
-                                      f"Raw detections: {detected_objects}, "
-                                      f"Processed students: {', '.join(processed_reg_nums)}")
 
-                    with open(image_path, 'rb') as image_file:
-                        uploaded_instance.image.file.seek(0) 
+                    today = datetime.now()
+
+                    image_description = (
+                        f"Attendance taken on {today.date()}. "
+                        f"Raw detections: {detected_objects}, "
+                        f"Processed students: {', '.join(processed_reg_nums)}"
+                    )
+
+                    with open(image_path, "rb") as image_file:
+                        uploaded_instance.image.file.seek(0)
                         result = UploadImageToFirebase(
-                            uploaded_instance.image,  
-                            description=image_description
+                            uploaded_instance.image, description=image_description
                         )
-                        print(f"Successfully uploaded to Firebase: {result['firestore_id']}")
+                        print(
+                            f"Successfully uploaded to Firebase: {result['firestore_id']}"
+                        )
 
                 return Response(
                     {"message": "Image uploaded and attendance processed successfully"},
-                    status=status.HTTP_200_OK
+                    status=status.HTTP_200_OK,
                 )
-                
+
             except ValueError as ve:
                 logger.error(f"Validation error: {str(ve)}")
-                return Response(
-                    {"error": str(ve)}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 logger.error(f"Error processing attendance: {str(e)}", exc_info=True)
                 return Response(
-                    {"error": "Internal server error occurred"}, 
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"error": "Internal server error occurred"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
             finally:
                 if os.path.exists(image_path):
@@ -113,39 +122,49 @@ class ObjectDetectionView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-@api_view(['GET'])
+@api_view(["GET"])
 def get_attendance_by_date(request):
     try:
-        dates = AttendanceRecord.objects.values_list('date', flat=True)\
-            .distinct().order_by('-date')
-        
+        dates = (
+            AttendanceRecord.objects.values_list("date", flat=True)
+            .distinct()
+            .order_by("-date")
+        )
+
         students = RegisteredStudents.objects.all()
         attendance_data = {}
-        
+
         # Bulk fetch attendance records for optimization
-        all_records = AttendanceRecord.objects.filter(date__in=dates)\
-            .select_related('student')
-        
+        all_records = AttendanceRecord.objects.filter(date__in=dates).select_related(
+            "student"
+        )
+
         for date in dates:
-            date_str = date.strftime('%Y-%m-%d')
+            date_str = date.strftime("%Y-%m-%d")
             attendance_data[date_str] = []
-            
-            date_records = {record.student_id: record.is_present 
-                          for record in all_records if record.date == date}
-            
+
+            date_records = {
+                record.student_id: record.is_present
+                for record in all_records
+                if record.date == date
+            }
+
             for student in students:
-                attendance_data[date_str].append({
-                    'reg_num': student.reg_num,
-                    'name': student.name,
-                    'status': 'P' if date_records.get(student.reg_num, False) else 'A'
-                })
-        
+                attendance_data[date_str].append(
+                    {
+                        "reg_num": student.reg_num,
+                        "name": student.name,
+                        "status": (
+                            "P" if date_records.get(student.reg_num, False) else "A"
+                        ),
+                    }
+                )
+
         return Response(attendance_data, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         logger.error(f"Error fetching attendance data: {str(e)}")
         return Response(
-            {"error": "Failed to fetch attendance data"}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {"error": "Failed to fetch attendance data"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
